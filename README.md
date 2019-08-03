@@ -1,6 +1,10 @@
 # guthlogsystem
 Guthen's log system for Garry's Mod
 
+## For users
+
+Install my addon by downloading it and drag and drop it on your `addons` folder of your server.
+
 ## For developpers
 
 First of all, you need (on **SERVER SIDE**) to check if `guthlogsystem` exists (if you don't want to have an error if my addon isn't installed on a server) and then create your addons category with `guthlogsystem.addCategory( string name, Color colorInPanel )`.
