@@ -1,5 +1,5 @@
 guthlogsystem = guthlogsystem or {}
-guthlogsystem.Version   =   "1.0.0"
+guthlogsystem.Version   =   "1.0.1"
 guthlogsystem.Author    =   "Guthen"
 
 if SERVER then
