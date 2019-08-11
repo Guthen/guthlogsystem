@@ -1,5 +1,5 @@
 guthlogsystem = guthlogsystem or {}
-guthlogsystem.Version   =   "1.0.1"
+guthlogsystem.Version   =   "1.1.0"
 guthlogsystem.Author    =   "Guthen"
 
 include( 'guthlogsystem/sh_config.lua' )
