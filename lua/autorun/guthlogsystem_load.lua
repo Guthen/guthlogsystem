@@ -10,3 +10,5 @@ else
    include( 'guthlogsystem/cl_init.lua' )
 end
 include( 'guthlogsystem/sh_init.lua' )
+
+print( "guthlogsystem - Loaded" )

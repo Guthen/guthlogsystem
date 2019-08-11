@@ -114,3 +114,13 @@ concommand.Add( "guthlogsystem_panel", function( ply )
     log:SetSize( panel:GetWide() - nav:GetWide() - 30, ScrH() / 1.8 )
 
 end )
+
+--  > Hook PANEL
+
+hook.Add( "OnPlayerChat", "guthlogsystem:panel", function( ply, txt )
+    if not ( ply == LocalPlayer() ) then return end
+
+    if ( string.StartWith( txt, "!logs" ) ) then
+        RunConsoleCommand( "guthlogsystem_panel" )
+    end
+end )

@@ -122,3 +122,5 @@ end
 
 hook.Add( "ShutDown", "guthlogsystem:save", guthlogsystem.save )
 timer.Create( "guthlogsystem:save", 5*60, 0, guthlogsystem.save )
+
+print( "guthlogsystem - 'sv_init.lua' loaded" )
