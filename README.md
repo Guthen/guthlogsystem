@@ -1,6 +1,12 @@
 # guthlogsystem
 Guthen's log system for Garry's Mod
 
+## Panel
+
+![Player Say Section](https://mtxserv.com/forums/attachments/1564836019619-png.18202/)
+
+![guthwhitelistsystem Section](https://mtxserv.com/forums/attachments/1564836069406-png.18203/)
+
 ## For users
 
 Install my addon by downloading it and drag and drop it on your `addons` folder of your server.
