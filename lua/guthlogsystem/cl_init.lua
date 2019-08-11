@@ -120,7 +120,7 @@ end )
 hook.Add( "OnPlayerChat", "guthlogsystem:panel", function( ply, txt )
     if not ( ply == LocalPlayer() ) then return end
 
-    if ( string.StartWith( txt, "!logs" ) ) then
+    if ( string.StartWith( txt, guthlogsystem.conf.PanelTChatCommand ) ) then
         RunConsoleCommand( "guthlogsystem_panel" )
     end
 end )
