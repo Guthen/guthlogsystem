@@ -4,19 +4,19 @@ function PANEL:Init()
     self.buttons = {}
 
     self.scroll = vgui.Create( "DScrollPanel", self )
-        self.scroll:Dock( FILL )
+    self.scroll:Dock( FILL )
 
-        local vbar = self.scroll:GetVBar()
-        vbar:SetHideButtons( true )
-        vbar.Paint = function( _, w, h )
-            surface.SetDrawColor( Color( 52, 73, 94 ) )
-            surface.DrawRect( w/2, 0, w/2, h )
-        end
-        vbar.btnGrip.Paint = function( _self, w, h )
-            --if not _self:IsHovered() then return end
-            surface.SetDrawColor( Color( 40, 58, 75 ) )
-            surface.DrawRect( w/2, 0, w/2, h )
-        end
+    local vbar = self.scroll:GetVBar()
+    vbar:SetHideButtons( true )
+    vbar.Paint = function( _, w, h )
+        surface.SetDrawColor( Color( 52, 73, 94 ) )
+        surface.DrawRect( w/2, 0, w/2, h )
+    end
+    vbar.btnGrip.Paint = function( _self, w, h )
+        --if not _self:IsHovered() then return end
+        surface.SetDrawColor( Color( 40, 58, 75 ) )
+        surface.DrawRect( w/2, 0, w/2, h )
+    end
 end
 
 function PANEL:Paint( w, h )
@@ -56,59 +56,55 @@ function PANEL:AddLog( txt, time )
 
     --  > Log
     surface.SetFont( "DermaDefaultBold" )
-    local but = vgui.Create( "DButton", self.scroll )
-        but:Dock( TOP )
-        but:SetWide( surface.GetTextSize( txt ) )
-        but:SetText( "" )
-        but:SetTextColor( Color( 236, 240, 241 ) )
-        but.time = time
-        but.Paint = function( _, w, h )
-            if i % 2 == 0 then
-                surface.SetDrawColor( Color( 0, 0, 0, 0 ) )
-            else
-                surface.SetDrawColor( Color( 44, 62, 80 ) )
-            end
-            surface.DrawRect( 0, 0, w, h )
-
-            --  > Log out
-            surface.SetFont( "DermaDefaultBold" )
-
-            local reg = {}
-            local _txt = txt -- copy
-            for _, v in pairs( guthlogsystem.regex ) do
-                local t = { color = v.color, doing = false }
-                local regex = "(%b" .. v.regex .. v.regex .. ")"
-                t.s, t.e = string.find( _txt, regex )
-
-                if t.s and t.e then
-                    table.insert( reg, t )
-                    _txt = string.gsub( _txt, v.regex, "" )
-                end
-            end
-            table.SortByMember( reg, "s", true )
-
-            for i = 1, #_txt do
-                for k, v in pairs( reg ) do
-                    local off = 0
-                    --if k > 2 then off = k - 1 end
-                    if i == v.s - off or v.doing then
-                        v.doing = true
-                        surface.SetTextColor( v.color )
-                    else
-                        surface.SetTextColor( Color( 255, 255, 255 ) )
-                    end
-                    if i == v.e - 1 - off then v.doing = false end
-                    if v.doing then break end
-                end
-                local _w, _h = surface.GetTextSize( string.sub( _txt, 1, i - 1 ) )
-                surface.SetTextPos( 55 + _w, h/2 - _h/2 + 1 )
-                surface.DrawText( string.sub( _txt, i, i ) )
-            end
-
-            --  > Date out
-            --draw.SimpleText( txt, "DermaDefaultBold", 55, h/2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-            draw.SimpleText( os.date( "%H:%M:%S", time ), "DermaDefault", 5, h/2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+    local but = self.scroll:Add( "DPanel" )
+    but:Dock( TOP )
+    but.Paint = function( _, w, h )
+        if i % 2 == 0 then
+            surface.SetDrawColor( Color( 0, 0, 0, 0 ) )
+        else
+            surface.SetDrawColor( Color( 44, 62, 80 ) )
         end
+        surface.DrawRect( 0, 0, w, h )
+
+        --  > Log out
+        surface.SetFont( "DermaDefaultBold" )
+
+        local reg = {}
+        local _txt = txt -- copy
+        for _, v in pairs( guthlogsystem.regex ) do
+            local t = { color = v.color, doing = false }
+            local regex = "(%b" .. v.regex .. v.regex .. ")"
+            t.s, t.e = string.find( _txt, regex )
+
+            if t.s and t.e then
+                table.insert( reg, t )
+                _txt = string.gsub( _txt, v.regex, "" )
+            end
+        end
+        table.SortByMember( reg, "s", true )
+
+        for i = 1, #_txt do
+            for k, v in pairs( reg ) do
+                local off = 0
+                --if k > 2 then off = k - 1 end
+                if i == v.s - off or v.doing then
+                    v.doing = true
+                    surface.SetTextColor( v.color )
+                else
+                    surface.SetTextColor( Color( 255, 255, 255 ) )
+                end
+                if i == v.e - 1 - off then v.doing = false end
+                if v.doing then break end
+            end
+            local _w, _h = surface.GetTextSize( string.sub( _txt, 1, i - 1 ) )
+            surface.SetTextPos( 55 + _w, h/2 - _h/2 + 1 )
+            surface.DrawText( string.sub( _txt, i, i ) )
+        end
+
+        --  > Date out
+        --draw.SimpleText( txt, "DermaDefaultBold", 55, h/2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+        draw.SimpleText( os.date( "%H:%M:%S", time ), "DermaDefault", 5, h/2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+    end
 
     --self.scroll:ScrollToChild( but )
 
