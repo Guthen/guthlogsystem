@@ -50,7 +50,13 @@ net.Receive( "guthlogsystem:network", function( len, ply )
 
     --  > Fetch logs
     local logs = sql.Query( ( "SELECT * FROM guthlogsystem_logs WHERE category = %s ORDER BY time DESC LIMIT %d OFFSET %d" ):format( escaped_category_name, guthlogsystem.config.logsPerPage, ( page - 1 ) * guthlogsystem.config.logsPerPage ) )
-    if not logs then return end
+    if not logs then
+        net.Start( "guthlogsystem:network" )
+            net.WriteBool( true )
+            net.WriteUInt( 0, guthlogsystem.config.maxPagesInBits )
+        net.Send( ply )
+        return 
+    end
 
     --  > Count logs
     local count = select( 2, next( sql.Query( ( "SELECT COUNT( * ) FROM guthlogsystem_logs WHERE category = %s" ):format( escaped_category_name ) )[1] ) )

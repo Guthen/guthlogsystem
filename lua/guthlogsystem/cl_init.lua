@@ -3,7 +3,7 @@ guthlogsystem.categories = guthlogsystem.categories or {}
 guthlogsystem.regex = {}
 
 function guthlogsystem.addRegex( regex, color )
-    table.insert( guthlogsystem.regex, { regex = regex, color = color } )
+    guthlogsystem.regex[regex] = color
 end
 guthlogsystem.addRegex( "*", Color( 52, 152, 219 ) ) -- Player regex
 guthlogsystem.addRegex( "&", Color( 46, 204, 113 ) ) -- Msg/Number regex
@@ -11,59 +11,95 @@ guthlogsystem.addRegex( "~", Color( 46, 204, 113 ) ) -- Msg/Number regex
 guthlogsystem.addRegex( "!", Color( 46, 204, 113 ) ) -- Msg/Number regex
 guthlogsystem.addRegex( "?", Color( 155, 89, 182 ) ) -- Class/Msg regex
 
---  >
+--  > Gradient
+local function lerpColor( t, fColor, eColor )
+    return Color( Lerp( t, fColor.r, eColor.r ), Lerp( t, fColor.g, eColor.g ), Lerp( t, fColor.b, eColor.b ) )
+end
+
+function guthlogsystem.drawGradient( x, y, w, h, color, end_color )
+    for x = 0, w do -- make a gradient, very easy
+        --[[ if self:IsHovered() then
+            local t = math.abs( math.sin( CurTime() ) / w ) * 100 * 2
+            surface.SetDrawColor( lerpColor( t, color, end_color ) )
+        else ]]
+        surface.SetDrawColor( lerpColor( x / w, color, end_color ) )
+        surface.DrawLine( x, 0, x, h )
+    end
+end
+
+--  > Panel
+guthlogsystem.colors = {
+    fg = Color( 52, 73, 94 ),
+    bg = Color( 44, 62, 80 ),
+    blue_fg = Color( 52, 152, 219 ),
+    blue_bg = Color( 41, 128, 185 ),
+}
+
+function guthlogsystem.createButton( parent, text, dock, doclick, color, end_color )
+    local color = color or guthlogsystem.colors.blue_fg
+    local end_color = end_color or guthlogsystem.colors.blue_bg
+
+    local button = parent:Add( "DButton" )
+    button:Dock( dock )
+    button:SetText( text )
+    button:SetTextColor( color_white )
+    button:SetFont( "DermaDefaultBold" )
+    function button:Paint( w, h )
+        guthlogsystem.drawGradient( 0, 0, w, h, self:IsHovered() and end_color or color, self:IsHovered() and color or end_color )
+    end
+    function button:DoClickInternal()
+        surface.PlaySound( "ui/buttonclick.wav" )
+    end
+    function button:OnCursorEntered()
+        surface.PlaySound( "ui/buttonrollover.wav" )
+    end
+    button.DoClick = doclick
+
+    return button
+end
 
 local parse = function() end
 net.Receive( "guthlogsystem:network", function( len )
     local is_logs = net.ReadBool()
     local max_pages = net.ReadUInt( guthlogsystem.config.maxPagesInBits )
-    local data = util.JSONToTable( util.Decompress( net.ReadData( len - 1 - ( is_logs and guthlogsystem.config.maxPagesInBits or 0 ) ) ) )
 
-    if is_logs then
-        parse( data, max_pages )
+    if max_pages > 0 then
+        local data = util.JSONToTable( util.Decompress( net.ReadData( len - 1 - ( is_logs and guthlogsystem.config.maxPagesInBits or 0 ) ) ) )
+
+        if is_logs then
+            parse( data, max_pages )
+        else
+            guthlogsystem.categories = data
+        end
     else
-        guthlogsystem.categories = data
+        parse()
     end
 end )
-
-local function lerpColor( t, fColor, eColor )
-    return Color( Lerp( t, fColor.r, eColor.r ), Lerp( t, fColor.g, eColor.g ), Lerp( t, fColor.b, eColor.b ) )
-end
 
 concommand.Add( "guthlogsystem_panel", function( ply )
     if not guthlogsystem.config.accessRanks[ply:GetUserGroup()] then return end
 
     gui.EnableScreenClicker( true )
 
+    local credit_text = ( "v%s by %s" ):format( guthlogsystem.Version, guthlogsystem.Author )
     local panel = vgui.Create( "DPanel" )
-        panel:SetSize( ScrW()/1.96, ScrH()/1.7 )
-        panel:Center()
-        panel:SetAlpha( 0 )
-        panel:AlphaTo( 255, .2, 0 )
-        panel.Paint = function( self, w, h )
-            local color = Color( 52, 73, 94 )
-            local endColor = Color( 44, 62, 80 )
+    panel:SetSize( ScrW() / 1.96, ScrH() / 1.7 )
+    panel:Center()
+    panel:SetAlpha( 0 )
+    panel:AlphaTo( 255, .2, 0 )
+    panel.Paint = function( self, w, h )
+        w = w - ScrW() / 8
 
-            w = w - ScrW()/8
+        --  > Gradient
+        guthlogsystem.drawGradient( 0, 0, w, h, guthlogsystem.colors.fg, guthlogsystem.colors.bg )
 
-            for x = 0, w do -- make a gradient, very easy
-                surface.SetDrawColor( lerpColor( x / w, color, endColor ) )
+        --  > Separation line
+        surface.SetDrawColor( guthlogsystem.colors.fg )
+        surface.DrawLine( w - 1, 0, w - 1, h )
 
-                surface.DrawLine( x, 0, x, h )
-            end
-            surface.SetDrawColor( color ) -- line before the nav
-            -- surface.DrawRect( 0, 0, w, h )
-
-            surface.DrawLine( w - 1, 0, w - 1, h )
-
-            surface.SetDrawColor( endColor )
-            surface.DrawLine( 0, 0, 0, h )
-            surface.DrawLine( 0, 0, w, 0 )
-            surface.DrawLine( 0, h - 1, w, h - 1 )
-
-            --  > Credits
-            draw.SimpleText( ("v%s by %s"):format( guthlogsystem.Version, guthlogsystem.Author ), "HudHintTextSmall", 5, h - 12 )
-        end
+        --  > Credits
+        draw.SimpleText( credit_text, "HudHintTextSmall", 5, h - 12 )
+    end
 
     --  > Logs viewer
     local log = panel:Add( "GLSLog" )
@@ -71,33 +107,28 @@ concommand.Add( "guthlogsystem_panel", function( ply )
     --  > Page controller
     local pager = log:Add( "DPanel" )
     pager:Dock( BOTTOM )
+    pager:DockMargin( 0, 10, 0, 0 )
     pager.cur_page = 1
     pager.max_page = 1
     function pager:Paint( w, h )
         draw.SimpleText( ( "Page %d/%d" ):format( self.cur_page, self.max_page ), "DermaDefaultBold", w / 2, h / 2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
     end
-    
-    local next_page = pager:Add( "DButton" )
-    next_page:Dock( RIGHT )
-    next_page:SetText( "Next" )
-    --next_page:SetDisabled( true )
-    function next_page:DoClick()
+
+    --  > Next
+    guthlogsystem.createButton( pager, "Next", RIGHT, function()
         if not log.category then return end
 
-        --  > Next page
+        --  > Previous page
         local old_page = pager.cur_page
         pager.cur_page = math.Clamp( pager.cur_page + 1, 1, pager.max_page )
 
         --  > Fetch
         if old_page == pager.cur_page then return end
         log.category:DoClick()
-    end
+    end )
 
-    local previous_page = pager:Add( "DButton" )
-    previous_page:Dock( LEFT )
-    previous_page:SetText( "Previous" )
-    --previous_page:SetDisabled( true )
-    function previous_page:DoClick()
+    --  > Previous
+    guthlogsystem.createButton( pager, "Previous", LEFT, function()
         if not log.category then return end
 
         --  > Previous page
@@ -107,7 +138,7 @@ concommand.Add( "guthlogsystem_panel", function( ply )
         --  > Fetch
         if old_page == pager.cur_page then return end
         log.category:DoClick()
-    end
+    end )
 
     --  > Categories navigation 
     local nav = panel:Add( "GLSNav" )
@@ -122,6 +153,12 @@ concommand.Add( "guthlogsystem_panel", function( ply )
             cat:DockMargin( 0, 5, 0, 0 )
         end
         function cat:DoClick()
+            --  > Reset pager
+            if not ( log.category == self ) then
+                pager.cur_page = 1
+            end
+
+            --  > Set category panel
             log.category = self
 
             --  > Clear logs
@@ -132,21 +169,22 @@ concommand.Add( "guthlogsystem_panel", function( ply )
                 net.WriteUInt( pager.cur_page, guthlogsystem.config.maxPagesInBits )
                 net.WriteString( v.name )
             net.SendToServer()
-            log:AddLog( "Fetching logs..", 0 )
+            log:AddDelimiter( "Fetching logs.." )
 
             --  > Parse logs
             parse = function( logs, max_page )
                 if not IsValid( cat ) then return end
                 log:Clear()
 
-                for id, lv in ipairs( logs ) do
-                    log:AddLog( lv.log, tonumber( lv.time ) )
-                end
+                if logs and max_page then
+                    for id, lv in ipairs( logs ) do
+                        log:AddLog( lv.log, tonumber( lv.time ) )
+                    end
 
-                --[[ if #logs == 0 then
-                    log:AddLog( "", 0 )
-                end ]]
-                pager.max_page = max_page
+                    pager.max_page = max_page
+                else
+                    log:AddDelimiter( "No log found" )
+                end
             end
         end
 
@@ -158,7 +196,9 @@ concommand.Add( "guthlogsystem_panel", function( ply )
 
     --  > Close button
     local close = nav:AddButton( "Close", Color( 231, 76, 60 ), Color( 192, 57, 43 ) )
-    close:DockMargin( 0, 5, 0, 0 )
+    close:SetParent( nav )
+    close:Dock( BOTTOM )
+    close:DockMargin( 0, 0, 0, 5 )
     close.DoClick = function()
         panel:AlphaTo( 0, .2, 0, function()
             panel:Remove()
@@ -167,6 +207,7 @@ concommand.Add( "guthlogsystem_panel", function( ply )
     end
 
     --  > Final setup of logs viewer
+    log:AddDelimiter( "COUCOU" )
     log:SetPos( 15, 15 )
     log:SetSize( panel:GetWide() - nav:GetWide() - 30, ScrH() / 1.8 )
 end )
