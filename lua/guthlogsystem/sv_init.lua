@@ -1,126 +1,87 @@
 guthlogsystem = guthlogsystem or {}
-guthlogsystem.categories = {}
+guthlogsystem.categories = guthlogsystem.categories or {}
 
 util.AddNetworkString( "guthlogsystem:network" )
 
---  >
-
+--  > Add logs/categories
 function guthlogsystem.addCategory( name, color )
-    if not isstring( name ) or not IsColor( color ) then print( "nop2: " .. name ) return false end
-    if guthlogsystem.categories[name] then return false end
+    if not isstring( name ) or not IsColor( color ) then return false end
+    --if guthlogsystem.categories[name] then return false end
 
-    local t = { name = name, color = color, logs = {} }
-
+    local t = { name = name, color = color }
     guthlogsystem.categories[name] = t
-    guthlogsystem.network( t, false )
 
-    return true
+    return function( log )
+        return guthlogsystem.addLog( name, log )
+    end
 end
 
 function guthlogsystem.addLog( category, log )
     if not isstring( category ) or not isstring( log ) then return false end
     if not guthlogsystem.categories[category] then return false end
 
-    local t = { category = category, time = os.time(), msg = log }
-
-    table.insert( guthlogsystem.categories[category].logs, t )
-    guthlogsystem.network( t, true )
-
-    return true
+    local query = ( "INSERT INTO guthlogsystem_logs ( log, category, time ) VALUES ( %s, %s, %d )" ):format( SQLStr( log ), SQLStr( category ), os.time() )
+    return sql.Query( query ) == nil and true or false
 end
 
---  >
+--  > Network
+function guthlogsystem.networkCategories( ply )
+    local data = util.Compress( util.TableToJSON( guthlogsystem.categories ) )
 
-function guthlogsystem.network( t, isLog, isCats )
-    local data = util.Compress( util.TableToJSON( t ) )
     net.Start( "guthlogsystem:network" )
+        net.WriteBool( false )
+        net.WriteUInt( 0, guthlogsystem.config.maxPagesInBits )
         net.WriteData( data, #data )
-        net.WriteBool( isLog or false )
-        net.WriteBool( isCats or false )
-    net.Broadcast()
+    net.Send( ply )
 end
-
-
---  >
-
-hook.Add( "InitPostEntity", "guthlogsystem:hooks", function()
-    include( "guthlogsystem/sv_hooks.lua" )
-    guthlogsystem.load()
-end )
-
---  > Send logs on first spawn
 hook.Add( "PlayerInitialSpawn", "guthlogsystem:categories", function( ply )
     timer.Simple( 0, function()
-        guthlogsystem.network( guthlogsystem.categories, false, true )
+        guthlogsystem.networkCategories( ply )
     end )
 end )
 
-function guthlogsystem.load( cat )
-    if cat then
-        if not guthlogsystem.categories[cat] then return end
+net.Receive( "guthlogsystem:network", function( len, ply )
+    if not guthlogsystem.config.accessRanks[ply:GetUserGroup()] then return end
 
-        local t = string.gsub( cat, " ", "_" ):lower()
-            t = string.gsub( t, "/", "_" )
+    --  > Read data
+    local page = net.ReadUInt( guthlogsystem.config.maxPagesInBits )
+    local category_name = net.ReadString()
+    local escaped_category_name = SQLStr( category_name )
 
-        local result = sql.Query( "CREATE TABLE guthlogsystem_" .. t .. "( Log TEXT, Time INTEGER )" )
-        if result == false then return print( "guthlogsystem - SQL ERROR ON CATEGORY : " .. sql.LastError() ) end
-        return
+    --  > Fetch logs
+    local logs = sql.Query( ( "SELECT * FROM guthlogsystem_logs WHERE category = %s ORDER BY time DESC LIMIT %d OFFSET %d" ):format( escaped_category_name, guthlogsystem.config.logsPerPage, ( page - 1 ) * guthlogsystem.config.logsPerPage ) )
+    if not logs then
+        net.Start( "guthlogsystem:network" )
+            net.WriteBool( true )
+            net.WriteUInt( 0, guthlogsystem.config.maxPagesInBits )
+        net.Send( ply )
+        return 
     end
 
-    local good = false
-    for k, v in pairs( guthlogsystem.categories ) do
-        local t = string.gsub( v.name, " ", "_" ):lower()
-            t = string.gsub( t, "/", "_" )
-        if not sql.TableExists( "guthlogsystem_" .. t ) then continue end
+    --  > Count logs
+    local count = select( 2, next( sql.Query( ( "SELECT COUNT( * ) FROM guthlogsystem_logs WHERE category = %s" ):format( escaped_category_name ) )[1] ) )
 
-        local result = sql.Query( "SELECT * FROM guthlogsystem_" .. t )
-        if result == false then return print( "guthlogsystem - SQL ERROR ON LOAD : " .. sql.LastError() ) end
-
-        if istable( result ) then
-            for _, lv in pairs( result ) do
-                local _t = { category = k, time = tonumber( lv.Time ), msg = lv.Log }
-                table.insert( v.logs, _t )
-            end
-            good = true
-        end
-    end
-    if good then print( "guthlogsystem - SQL Table has been loaded" ) end
-end
-
-function guthlogsystem.save()
-    guthlogsystem.delete() -- delete before adding every logs
-
-    for _, v in pairs( guthlogsystem.categories ) do
-        local t = string.gsub( v.name, " ", "_" ):lower()
-            t = string.gsub( t, "/", "_" )
-        if not sql.TableExists( "guthlogsystem_" .. t ) then guthlogsystem.load( v.name ) end
-
-        for _, lv in ipairs( v.logs ) do
-            local format = ("INSERT INTO guthlogsystem_%s( Log, Time ) VALUES ( %s, %d )"):format( t, sql.SQLStr( lv.msg ), lv.time )
-            local result = sql.Query( format )
-            if result == false then return print( "guthlogsystem - SQL ERROR ON SAVE : " .. sql.LastError() ) end
-        end
-    end
-    print( "guthlogsystem - Saved into SQL Database" )
-end
-
-function guthlogsystem.delete()
-    local i = 0
-    for _, v in pairs( guthlogsystem.categories ) do
-        local t = string.gsub( v.name, " ", "_" ):lower()
-            t = string.gsub( t, "/", "_" )
-        if not sql.TableExists( "guthlogsystem_" .. t ) then continue end
-
-        local result = sql.Query( "DROP TABLE guthlogsystem_" .. t )
-        if result == false then return print( "guthlogsystem - SQL ERROR ON DELETE : " .. sql.LastError() ) end
-
-        i = i + 1
+    --  > Remove useless params
+    for i, v in ipairs( logs ) do
+        v.category = nil
+        v.id = nil
     end
 
-    print( "guthlogsystem - Deleted from SQL Database (" .. i .. ")" )
-end
+    --  > Send logs
+    local data = util.Compress( util.TableToJSON( logs ) )
+    net.Start( "guthlogsystem:network" )
+        net.WriteBool( true )
+        net.WriteUInt( math.ceil( count / guthlogsystem.config.logsPerPage ), guthlogsystem.config.maxPagesInBits )
+        net.WriteData( data, #data )
+    net.Send( ply )
+end )
 
-hook.Add( "ShutDown", "guthlogsystem:save", guthlogsystem.save )
-timer.Create( "guthlogsystem:save", 5*60, 0, guthlogsystem.save )
+--  > Initialization
+hook.Add( "InitPostEntity", "guthlogsystem:hooks", function()
+    sql.Query( "CREATE TABLE IF NOT EXISTS guthlogsystem_logs ( id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT NOT NULL, log TEXT NOT NULL, time INTEGER NOT NULL )" )
+
+    include( "guthlogsystem/sv_hooks.lua" )
+    --guthlogsystem.load()
+end )
 
 print( "guthlogsystem - 'sv_init.lua' loaded" )
