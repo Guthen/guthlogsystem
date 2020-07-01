@@ -184,6 +184,7 @@ concommand.Add( "guthlogsystem_panel", function( ply )
                     pager.max_page = max_page
                 else
                     log:AddDelimiter( "No log found" )
+                    pager.max_page = 1
                 end
             end
         end
@@ -207,7 +208,6 @@ concommand.Add( "guthlogsystem_panel", function( ply )
     end
 
     --  > Final setup of logs viewer
-    log:AddDelimiter( "COUCOU" )
     log:SetPos( 15, 15 )
     log:SetSize( panel:GetWide() - nav:GetWide() - 30, ScrH() / 1.8 )
 end )
