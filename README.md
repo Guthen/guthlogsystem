@@ -3,6 +3,8 @@ Guthen's log system for Garry's Mod
 
 ## Panel
 
+![Panel since v1.2.1](https://media.discordapp.net/attachments/610127962981007380/727926900613316638/unknown.png)
+
 ![Player Say Section](https://mtxserv.com/forums/attachments/1564836019619-png.18202/)
 
 ![guthwhitelistsystem Section](https://mtxserv.com/forums/attachments/1564836069406-png.18203/)
