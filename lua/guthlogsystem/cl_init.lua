@@ -70,6 +70,7 @@ net.Receive( "guthlogsystem:network", function( len )
             parse( data, max_pages )
         else
             guthlogsystem.categories = data
+            print( "guthlogsystem - Got categories" )
         end
     else
         parse()
@@ -219,3 +220,5 @@ hook.Add( "OnPlayerChat", "guthlogsystem:panel", function( ply, txt )
 
     RunConsoleCommand( "guthlogsystem_panel" )
 end )
+
+print( "guthlogsystem - 'cl_init.lua' loaded" )

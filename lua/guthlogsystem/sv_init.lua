@@ -30,9 +30,11 @@ function guthlogsystem.networkCategories( ply )
 
     net.Start( "guthlogsystem:network" )
         net.WriteBool( false )
-        net.WriteUInt( 0, guthlogsystem.config.maxPagesInBits )
+        net.WriteUInt( 1, guthlogsystem.config.maxPagesInBits )
         net.WriteData( data, #data )
     net.Send( ply )
+
+    print( "guthlogsystem - Sent categories to " .. ply:GetName() )
 end
 hook.Add( "PlayerInitialSpawn", "guthlogsystem:categories", function( ply )
     timer.Simple( 0, function()
