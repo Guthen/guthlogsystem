@@ -78,6 +78,21 @@ net.Receive( "guthlogsystem:network", function( len, ply )
     net.Send( ply )
 end )
 
+--  > Clean-Up
+concommand.Add( "guthlogsystem_delete_logs", function( ply, cmd, args )
+    --  > Security
+    if not ( args[1] == "yes" ) then
+        return print( "guthlogsystem - Are you sure to do this command? This command deletes all logs from the database. If you are sure, enter 'guthlogsystem_delete_logs yes'." )
+    end
+
+    --  > Delete all logs
+    if sql.Query( "DELETE FROM `guthlogsystem_logs` WHERE time > 0" ) then
+        print( "guthlogsystem - All logs have been erased" )
+    else
+        print( "guthlogsystem - Failed : " .. sql.LastError() )
+    end
+end )
+
 --  > Initialization
 hook.Add( "InitPostEntity", "guthlogsystem:hooks", function()
     sql.Query( "CREATE TABLE IF NOT EXISTS guthlogsystem_logs ( id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT NOT NULL, log TEXT NOT NULL, time INTEGER NOT NULL )" )

@@ -80,12 +80,16 @@ end )
 concommand.Add( "guthlogsystem_panel", function( ply )
     if not guthlogsystem.config.accessRanks[ply:GetUserGroup()] then return end
 
-    gui.EnableScreenClicker( true )
-
     local credit_text = ( "v%s by %s" ):format( guthlogsystem.Version, guthlogsystem.Author )
-    local panel = vgui.Create( "DPanel" )
+    local panel = vgui.Create( "DFrame" )
+    panel:DockPadding( 0, 0, 0, 0 )
     panel:SetSize( ScrW() / 1.96, ScrH() / 1.7 )
+    panel:SetSizable( false )
+    panel:SetDraggable( false )
+    panel:ShowCloseButton( false )
+    panel:SetTitle( "" )
     panel:Center()
+    panel:MakePopup()
     panel:SetAlpha( 0 )
     panel:AlphaTo( 255, .2, 0 )
     panel.Paint = function( self, w, h )
@@ -205,7 +209,6 @@ concommand.Add( "guthlogsystem_panel", function( ply )
         panel:AlphaTo( 0, .2, 0, function()
             panel:Remove()
         end )
-        gui.EnableScreenClicker( false )
     end
 
     --  > Final setup of logs viewer

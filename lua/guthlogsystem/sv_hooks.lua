@@ -20,7 +20,7 @@ end )
 
 hook.Add( "PlayerDeath", "guthlogsystem:log", function( ply, inf, atk )
     local _inf = IsValid( inf ) and "using &" .. inf:GetClass() .. "&" or ""
-    local _atk = atk:IsPlayer() and atk:GetName() or atk:GetClass()
+    local _atk = not IsValid( atk ) and "NULL" or atk:IsPlayer() and atk:GetName() or atk:GetClass()
 
     log( ( "*%s* (%s) die by ?%s? %s" ):format( ply:GetName(), ply:SteamID(), _atk, _inf ) )
 end )
