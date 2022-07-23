@@ -93,7 +93,7 @@ concommand.Add( "guthlogsystem_delete_logs", function( ply, cmd, args )
 end )
 
 --  > Initialization
-hook.Add( "InitPostEntity", "guthlogsystem:hooks", function()
+hook.Add( "PostGamemodeLoaded", "guthlogsystem:hooks", function()
     sql.Query( "CREATE TABLE IF NOT EXISTS guthlogsystem_logs ( id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT NOT NULL, log TEXT NOT NULL, time INTEGER NOT NULL )" )
 
     include( "guthlogsystem/sv_hooks.lua" )
