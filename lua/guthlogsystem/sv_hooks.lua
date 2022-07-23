@@ -37,7 +37,6 @@ local log = guthlogsystem.addCategory( "Player Connect/Disconnect", color )
 
 gameevent.Listen( "player_connect" )
 hook.Add( "player_connect", "guthlogsystem:log", function( data )
-    PrintTable( data )
     log( ( "*%s* (%s) is connecting with IP : &%s&" ):format( data.name, data.networkid, data.address or "none" ) )
 end )
 
