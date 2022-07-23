@@ -1,7 +1,8 @@
 guthlogsystem = guthlogsystem or {}
 guthlogsystem.categories = guthlogsystem.categories or {}
 
-util.AddNetworkString( "guthlogsystem:network" )
+util.AddNetworkString( "guthlogsystem:sync_logs" )
+util.AddNetworkString( "guthlogsystem:sync_categories" )
 
 --  > Add logs/categories
 function guthlogsystem.addCategory( name, color )
@@ -26,23 +27,23 @@ end
 
 --  > Network
 function guthlogsystem.networkCategories( ply )
-    local data = util.Compress( util.TableToJSON( guthlogsystem.categories ) )
-
-    net.Start( "guthlogsystem:network" )
-        net.WriteBool( false )
-        net.WriteUInt( 1, guthlogsystem.config.maxPagesInBits )
-        net.WriteData( data, #data )
+    net.Start( "guthlogsystem:sync_categories" )
+        net.WriteUInt( table.Count( guthlogsystem.categories ), guthlogsystem.config.maxCategoriesInBits )
+        for k, v in pairs( guthlogsystem.categories ) do
+            net.WriteString( v.name )
+            net.WriteColor( v.color )
+        end
     net.Send( ply )
 
     print( "guthlogsystem - Sent categories to " .. ply:GetName() )
 end
-hook.Add( "PlayerInitialSpawn", "guthlogsystem:categories", function( ply )
-    timer.Simple( 0, function()
-        guthlogsystem.networkCategories( ply )
-    end )
+net.Receive( "guthlogsystem:sync_categories", function( len, ply )
+    if not guthlogsystem.config.accessRanks[ply:GetUserGroup()] then return end  --  not enough privileges
+
+    guthlogsystem.networkCategories( ply )
 end )
 
-net.Receive( "guthlogsystem:network", function( len, ply )
+net.Receive( "guthlogsystem:sync_logs", function( len, ply )
     if not guthlogsystem.config.accessRanks[ply:GetUserGroup()] then return end
 
     --  > Read data
@@ -53,8 +54,7 @@ net.Receive( "guthlogsystem:network", function( len, ply )
     --  > Fetch logs
     local logs = sql.Query( ( "SELECT * FROM guthlogsystem_logs WHERE category = %s ORDER BY time DESC LIMIT %d OFFSET %d" ):format( escaped_category_name, guthlogsystem.config.logsPerPage, ( page - 1 ) * guthlogsystem.config.logsPerPage ) )
     if not logs then
-        net.Start( "guthlogsystem:network" )
-            net.WriteBool( true )
+        net.Start( "guthlogsystem:sync_logs" )
             net.WriteUInt( 0, guthlogsystem.config.maxPagesInBits )
         net.Send( ply )
         return 
@@ -71,8 +71,7 @@ net.Receive( "guthlogsystem:network", function( len, ply )
 
     --  > Send logs
     local data = util.Compress( util.TableToJSON( logs ) )
-    net.Start( "guthlogsystem:network" )
-        net.WriteBool( true )
+    net.Start( "guthlogsystem:sync_logs" )
         net.WriteUInt( math.ceil( count / guthlogsystem.config.logsPerPage ), guthlogsystem.config.maxPagesInBits )
         net.WriteData( data, #data )
     net.Send( ply )

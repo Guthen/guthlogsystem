@@ -59,22 +59,40 @@ function guthlogsystem.createButton( parent, text, dock, doclick, color, end_col
 end
 
 local parse = function() end
-net.Receive( "guthlogsystem:network", function( len )
-    local is_logs = net.ReadBool()
+net.Receive( "guthlogsystem:sync_logs", function( len )
     local max_pages = net.ReadUInt( guthlogsystem.config.maxPagesInBits )
 
     if max_pages > 0 then
-        local data = util.JSONToTable( util.Decompress( net.ReadData( len - 1 - ( is_logs and guthlogsystem.config.maxPagesInBits or 0 ) ) ) )
-
-        if is_logs then
-            parse( data, max_pages )
-        else
-            guthlogsystem.categories = data
-            print( "guthlogsystem - Got categories" )
-        end
+        local data = util.JSONToTable( util.Decompress( net.ReadData( len - 1 - guthlogsystem.config.maxPagesInBits ) ) )
+        parse( data, max_pages )
     else
         parse()
     end
+end )
+
+local function retrieve_categories() 
+    net.Start( "guthlogsystem:sync_categories" )
+    net.SendToServer()
+    print( "guthlogsystem - Asking server for categories.." )
+end
+hook.Add( "InitPostEntity", "guthlogsystem:sync_categories", function()
+    retrieve_categories()
+end )
+concommand.Add( "guthlogsystem_retrieve_categories", retrieve_categories )
+net.Receive( "guthlogsystem:sync_categories", function( len )
+    guthlogsystem.categories = {}
+
+    --  read categories data
+    local count = net.ReadUInt( guthlogsystem.config.maxCategoriesInBits )
+    for i = 1, count do
+        local name, color = net.ReadString(), net.ReadColor()
+        guthlogsystem.categories[name] = {
+            name = name,
+            color = color,
+        }
+    end
+
+    print( "guthlogsystem - Retrieved " .. count .. " categories" )
 end )
 
 concommand.Add( "guthlogsystem_panel", function( ply )
@@ -170,7 +188,7 @@ concommand.Add( "guthlogsystem_panel", function( ply )
             log:Clear()
 
             --  > Fetch logs
-            net.Start( "guthlogsystem:network" )
+            net.Start( "guthlogsystem:sync_logs" )
                 net.WriteUInt( pager.cur_page, guthlogsystem.config.maxPagesInBits )
                 net.WriteString( v.name )
             net.SendToServer()
