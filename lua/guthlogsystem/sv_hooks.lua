@@ -35,9 +35,10 @@ end )
 --  > Connect/Disconnect
 local log = guthlogsystem.addCategory( "Player Connect/Disconnect", color )
 
-gameevent.Listen( "player_connect_client" )
-hook.Add( "player_connect_client", "guthlogsystem:log", function( _, id, name, _, _, ip )
-    log( ( "*%s* (%s) is connecting with ip : &%s&" ):format( name, id, ip ) )
+gameevent.Listen( "player_connect" )
+hook.Add( "player_connect", "guthlogsystem:log", function( data )
+    PrintTable( data )
+    log( ( "*%s* (%s) is connecting with IP : &%s&" ):format( data.name, data.networkid, data.address or "none" ) )
 end )
 
 hook.Add( "PlayerAuthed", "guthlogsystem:log", function( ply, steamid )
@@ -45,8 +46,8 @@ hook.Add( "PlayerAuthed", "guthlogsystem:log", function( ply, steamid )
 end )
 
 gameevent.Listen( "player_disconnect" )
-hook.Add( "player_disconnect", "guthlogsystem:log", function( _, id, name, _, reason )
-    log( ( "*%s* (%s) is disconnecting for &%s&" ):format( name, id, reason ) )
+hook.Add( "player_disconnect", "guthlogsystem:log", function( data )
+    log( ( "*%s* (%s) is disconnecting for &%s&" ):format( data.name, data.networkid, data.reason ) )
 end )
 
 --  > Vehicle
