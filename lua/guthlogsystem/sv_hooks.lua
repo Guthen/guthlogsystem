@@ -61,6 +61,20 @@ hook.Add( "PlayerLeaveVehicle", "guthlogsystem:log", function( ply, veh )
     log( ( "*%s* (%s) has left of ?%s?" ):format( ply:GetName(), ply:SteamID(), class ) )
 end )
 
+--  > Weapon
+local log = guthlogsystem.addCategory( "Player Weapon", color )
+hook.Add( "PlayerSwitchWeapon", "guthlogsystem:log", function( ply, old_weapon, new_weapon )
+    log( ( "*%s* (%s) has switched weapon from ?%s? to ?%s?" ):format( ply:GetName(), ply:SteamID(), IsValid( old_weapon ) and old_weapon:GetClass() or "NULL", IsValid( new_weapon ) and new_weapon:GetClass() or "NULL" ) )
+end )
+
+hook.Add( "WeaponEquip", "guthlogsystem:log", function( weapon, ply )
+    log( ( "*%s* (%s) has equiped a ?%s? weapon" ):format( ply:GetName(), ply:SteamID(), weapon:GetClass() ) )
+end )
+
+hook.Add( "PlayerDroppedWeapon", "guthlogsystem:log", function( ply, weapon )
+    log( ( "*%s* (%s) has dropped a ?%s? weapon" ):format( ply:GetName(), ply:SteamID(), weapon:GetClass() ) )
+end )
+
 --  > Sandbox Logs
 if GAMEMODE.IsSandboxDerived then
 
