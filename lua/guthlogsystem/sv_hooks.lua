@@ -252,6 +252,20 @@ if DarkRP then
         log( ( "*%s* (%s) has paid &%d&$ of tax" ):format( ply:GetName(), ply:SteamID(), amount ) )
     end )
 
+    --  > Arrest
+    local log = guthlogsystem.addCategory( "DarkRP Arrest", color )
+    hook.Add( "playerArrested", "guthlogsystem:log", function( ply, time, actor ) 
+        log( ( "*%s* (%s) has been arrested by *%s* (%s) for &%d&s" ):format( ply:GetName(), ply:SteamID(), actor:GetName(), actor:SteamID(), time ) )
+    end )
+
+    hook.Add( "playerUnArrested", "guthlogsystem:log", function( ply, actor ) 
+        if IsValid( actor ) then
+            log( ( "*%s* (%s) has been unarrested by *%s* (%s)" ):format( ply:GetName(), ply:SteamID(), actor:GetName(), actor:SteamID() ) )
+        else
+            log( ( "*%s* (%s) has been unarrested by time" ):format( ply:GetName(), ply:SteamID() ) )
+        end
+    end )
+
 end
 
 if ULib then
