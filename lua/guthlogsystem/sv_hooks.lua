@@ -72,6 +72,7 @@ hook.Add( "WeaponEquip", "guthlogsystem:log", function( weapon, ply )
 end )
 
 hook.Add( "PlayerDroppedWeapon", "guthlogsystem:log", function( ply, weapon )
+    if not ply:IsPlayer() then return end --  for some reasons this hook can be called for NPCs
     log( ( "*%s* (%s) has dropped a ?%s? weapon" ):format( ply:GetName(), ply:SteamID(), weapon:GetClass() ) )
 end )
 

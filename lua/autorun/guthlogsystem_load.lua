@@ -1,6 +1,6 @@
 --if true then return end
 guthlogsystem = guthlogsystem or {}
-guthlogsystem.Version = "1.3.0"
+guthlogsystem.Version = "1.3.1"
 guthlogsystem.Author = "Guthen"
 
 include( 'guthlogsystem/sh_config.lua' )
